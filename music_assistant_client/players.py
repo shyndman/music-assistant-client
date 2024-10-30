@@ -98,11 +98,11 @@ class Players:
         """
         await self.client.send_command("players/cmd/seek", player_id=player_id, position=position)
 
-    async def cmd_next_track(self, player_id: str) -> None:
+    async def player_command_next_track(self, player_id: str) -> None:
         """Handle NEXT TRACK command for given player."""
         await self.client.send_command("players/cmd/next", player_id=player_id)
 
-    async def cmd_previous_track(self, player_id: str) -> None:
+    async def player_command_previous_track(self, player_id: str) -> None:
         """Handle PREVIOUS TRACK command for given player."""
         await self.client.send_command("players/cmd/previous", player_id=player_id)
 
@@ -134,13 +134,15 @@ class Players:
         """
         await self.client.send_command("players/cmd/unsync", player_id=player_id)
 
-    async def cmd_sync_many(self, target_player: str, child_player_ids: list[str]) -> None:
+    async def player_command_sync_many(
+        self, target_player: str, child_player_ids: list[str]
+    ) -> None:
         """Create temporary sync group by joining given players to target player."""
         await self.client.send_command(
             "players/cmd/sync_many", target_player=target_player, child_player_ids=child_player_ids
         )
 
-    async def cmd_unsync_many(self, player_ids: list[str]) -> None:
+    async def player_command_unsync_many(self, player_ids: list[str]) -> None:
         """Handle UNSYNC command for all the given players."""
         await self.client.send_command("players/cmd/unsync_many", player_ids=player_ids)
 
@@ -162,18 +164,6 @@ class Players:
 
     #  PlayerGroup related endpoints/commands
 
-    async def create_syncgroup(self, name: str, members: list[str]) -> Player:
-        """Create a new Sync Group with name and members.
-
-        - name: Name for the new group to create.
-        - members: A list of player_id's that should be part of this group.
-
-        Returns the newly created player on success.
-        """
-        return Player.from_dict(
-            await self.client.send_command("players/create_syncgroup", name=name, members=members)
-        )
-
     async def set_player_group_volume(self, player_id: str, volume_level: int) -> None:
         """
         Send VOLUME_SET command to given playergroup.
@@ -186,24 +176,13 @@ class Players:
             "players/cmd/group_volume", player_id=player_id, volume_level=volume_level
         )
 
-    async def cmd_group_volume_up(self, player_id: str) -> None:
+    async def player_command_group_volume_up(self, player_id: str) -> None:
         """Send VOLUME_UP command to given playergroup."""
         await self.client.send_command("players/cmd/group_volume_up", player_id=player_id)
 
-    async def cmd_group_volume_down(self, player_id: str) -> None:
+    async def player_command_group_volume_down(self, player_id: str) -> None:
         """Send VOLUME_DOWN command to given playergroup."""
         await self.client.send_command("players/cmd/group_volume_down", player_id=player_id)
-
-    async def set_player_group_members(self, player_id: str, members: list[str]) -> None:
-        """
-        Update the memberlist of the given PlayerGroup.
-
-          - player_id: player_id of the groupplayer to handle the command.
-          - members: list of player ids to set as members.
-        """
-        await self.client.send_command(
-            "players/cmd/set_members", player_id=player_id, members=members
-        )
 
     # Other endpoints/commands
 
