@@ -570,3 +570,69 @@ class Music:
         if type == ImageType.THUMB:
             return self.get_media_item_image(item, ImageType.LANDSCAPE)
         return None
+
+    async def get_item_by_name(
+        self,
+        name: str,
+        artist: str | None = None,
+        album: str | None = None,
+        media_type: MediaType | None = None,
+    ) -> MediaItemType | None:
+        """Try to find a media item (such as a playlist) by name."""
+        # pylint: disable=too-many-nested-blocks
+        searchname = name.lower()
+        library_functions = [
+            x
+            for x in (
+                self.get_library_playlists,
+                self.get_library_radios,
+                self.get_library_tracks,
+                self.get_library_albums,
+                self.get_library_artists,
+            )
+            if not media_type or media_type.value.lower() in x.__name__
+        ]
+        # prefer (exact) lookup in the library by name
+        for func in library_functions:
+            result = await func(search=searchname)
+            for item in result:
+                # handle optional artist filter
+                if (
+                    artist
+                    and (artists := getattr(item, "artists", None))
+                    and not any(x for x in artists if x.name.lower() == artist.lower())
+                ):
+                    continue
+                # handle optional album filter
+                if (
+                    album
+                    and (item_album := getattr(item, "album", None))
+                    and item_album.name.lower() != album.lower()
+                ):
+                    continue
+                if searchname == item.name.lower():
+                    return item
+        # nothing found in the library, fallback to global search
+        search_name = name
+        if album and artist:
+            search_name = f"{artist} - {album} - {name}"
+        elif album:
+            search_name = f"{album} - {name}"
+        elif artist:
+            search_name = f"{artist} - {name}"
+        search_results = await self.search(
+            search_query=search_name,
+            media_types=[media_type] if media_type else MediaType.ALL,
+            limit=5,
+        )
+        for results in (
+            search_results.tracks,
+            search_results.albums,
+            search_results.playlists,
+            search_results.artists,
+            search_results.radio,
+        ):
+            for item in results:
+                # simply return the first item because search is already sorted by best match
+                return item
+        return None
