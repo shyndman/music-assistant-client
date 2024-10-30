@@ -1,4 +1,4 @@
-"""Connect o a remote Music Assistant Server using the default Websocket API."""
+"""Connect to a remote Music Assistant Server using the Websocket API."""
 
 from __future__ import annotations
 

@@ -7,7 +7,7 @@ classifiers = [
   "Programming Language :: Python :: 3.11",
   "Programming Language :: Python :: 3.12",
 ]
-dependencies = ["aiohttp>3.10", "music_assistant_models==1.0.0"]
+dependencies = ["aiohttp>=3.10", "music_assistant_models==1.0.0"]
 description = "Music Assistant Base Models"
 license = {text = "Apache-2.0"}
 name = "music_assistant_client"

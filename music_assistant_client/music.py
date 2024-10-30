@@ -550,9 +550,10 @@ class Music:
             return item.image
         # always prefer album image for tracks
         album: Album | ItemMapping | None
-        if album := getattr(item, "album", None):
-            if album_image := self.get_media_item_image(album, type):
-                return album_image
+        if (album := getattr(item, "album", None)) and (
+            album_image := self.get_media_item_image(album, type)
+        ):
+            return album_image
         # handle regular image within mediaitem
         metadata: MediaItemMetadata | None
         if metadata := getattr(item, "metadata", None):
