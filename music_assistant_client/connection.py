@@ -7,7 +7,6 @@ import pprint
 from typing import Any, cast
 
 from aiohttp import ClientSession, ClientWebSocketResponse, WSMsgType, client_exceptions
-from music_assistant_models.helpers.json import json_dumps, json_loads
 
 from .exceptions import (
     CannotConnect,
@@ -17,6 +16,7 @@ from .exceptions import (
     InvalidState,
     NotConnected,
 )
+from .helpers import json_dumps, json_loads
 
 LOGGER = logging.getLogger(f"{__package__}.connection")
 
