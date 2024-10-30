@@ -98,6 +98,14 @@ class Players:
         """
         await self.client.send_command("players/cmd/seek", player_id=player_id, position=position)
 
+    async def cmd_next_track(self, player_id: str) -> None:
+        """Handle NEXT TRACK command for given player."""
+        await self.client.send_command("players/cmd/next", player_id=player_id)
+
+    async def cmd_previous_track(self, player_id: str) -> None:
+        """Handle PREVIOUS TRACK command for given player."""
+        await self.client.send_command("players/cmd/previous", player_id=player_id)
+
     async def player_command_sync(self, player_id: str, target_player: str) -> None:
         """
         Handle SYNC command for given player.
@@ -133,7 +141,7 @@ class Players:
         )
 
     async def cmd_unsync_many(self, player_ids: list[str]) -> None:
-        """Create temporary sync group by joining given players to target player."""
+        """Handle UNSYNC command for all the given players."""
         await self.client.send_command("players/cmd/unsync_many", player_ids=player_ids)
 
     async def play_announcement(
@@ -177,6 +185,14 @@ class Players:
         await self.client.send_command(
             "players/cmd/group_volume", player_id=player_id, volume_level=volume_level
         )
+
+    async def cmd_group_volume_up(self, player_id: str) -> None:
+        """Send VOLUME_UP command to given playergroup."""
+        await self.client.send_command("players/cmd/group_volume_up", player_id=player_id)
+
+    async def cmd_group_volume_down(self, player_id: str) -> None:
+        """Send VOLUME_DOWN command to given playergroup."""
+        await self.client.send_command("players/cmd/group_volume_down", player_id=player_id)
 
     async def set_player_group_members(self, player_id: str, members: list[str]) -> None:
         """
