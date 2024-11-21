@@ -106,45 +106,42 @@ class Players:
         """Handle PREVIOUS TRACK command for given player."""
         await self.client.send_command("players/cmd/previous", player_id=player_id)
 
-    async def player_command_sync(self, player_id: str, target_player: str) -> None:
-        """
-        Handle SYNC command for given player.
+    async def player_command_group(self, player_id: str, target_player: str) -> None:
+        """Handle GROUP command for given player.
 
-        Join/add the given player(id) to the given (master) player/sync group.
-        If the player is already synced to another player, it will be unsynced there first.
-        If the target player itself is already synced to another player, this will fail.
-        If the player can not be synced with the given target player, this will fail.
+        Join/add the given player(id) to the given (leader) player/sync group.
+        If the target player itself is already synced to another player, this may fail.
+        If the player can not be synced with the given target player, this may fail.
 
-          - player_id: player_id of the player to handle the command.
-          - target_player: player_id of the syncgroup master or group player.
+            - player_id: player_id of the player to handle the command.
+            - target_player: player_id of the syncgroup leader or group player.
         """
         await self.client.send_command(
-            "players/cmd/sync", player_id=player_id, target_player=target_player
+            "players/cmd/group", player_id=player_id, target_player=target_player
         )
 
-    async def player_command_unsync(self, player_id: str) -> None:
-        """
-        Handle UNSYNC command for given player.
+    async def player_command_ungroup(self, player_id: str) -> None:
+        """Handle UNGROUP command for given player.
 
-        Remove the given player from any syncgroups it currently is synced to.
-        If the player is not currently synced to any other player,
+        Remove the given player from any (sync)groups it currently is synced to.
+        If the player is not currently grouped to any other player,
         this will silently be ignored.
 
-          - player_id: player_id of the player to handle the command.
+            - player_id: player_id of the player to handle the command.
         """
-        await self.client.send_command("players/cmd/unsync", player_id=player_id)
+        await self.client.send_command("players/cmd/ungroup", player_id=player_id)
 
-    async def player_command_sync_many(
+    async def player_command_group_many(
         self, target_player: str, child_player_ids: list[str]
     ) -> None:
-        """Create temporary sync group by joining given players to target player."""
+        """Join given player(s) to target player."""
         await self.client.send_command(
-            "players/cmd/sync_many", target_player=target_player, child_player_ids=child_player_ids
+            "players/cmd/group_many", target_player=target_player, child_player_ids=child_player_ids
         )
 
-    async def player_command_unsync_many(self, player_ids: list[str]) -> None:
-        """Handle UNSYNC command for all the given players."""
-        await self.client.send_command("players/cmd/unsync_many", player_ids=player_ids)
+    async def player_command_ungroup_many(self, player_ids: list[str]) -> None:
+        """Handle UNGROUP command for all the given players."""
+        await self.client.send_command("players/cmd/ungroup_many", player_ids=player_ids)
 
     async def play_announcement(
         self,
