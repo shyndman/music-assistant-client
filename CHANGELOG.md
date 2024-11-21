@@ -1,5 +1,20 @@
 # Changelog
 
+## [1.0.6](https://github.com/music-assistant/client/compare/v1.0.5...v1.0.6) (2024-11-10)
+
+
+### Bug Fixes
+
+* search issue with integration passing MediaType.UNKNOWN ([#11](https://github.com/music-assistant/client/issues/11)) ([6aea1e9](https://github.com/music-assistant/client/commit/6aea1e95efdad639b581ec4a439e4a44d088b68d))
+
+## [1.0.5](https://github.com/music-assistant/client/compare/v1.0.4...v1.0.5) (2024-10-30)
+
+
+### Bug Fixes
+
+* Bump models to 1.0.3 to fix some import issues ([0258047](https://github.com/music-assistant/client/commit/0258047193db78785316cd0b4f2b251c71fab4aa))
+* json helpers missing ([6bdabe7](https://github.com/music-assistant/client/commit/6bdabe78f3b16263507f4b75aef0921473fb8d3a))
+
 ## [1.0.4](https://github.com/music-assistant/client/compare/v1.0.3...v1.0.4) (2024-10-30)
 
 
