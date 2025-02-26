@@ -106,6 +106,17 @@ class Players:
         """Handle PREVIOUS TRACK command for given player."""
         await self.client.send_command("players/cmd/previous", player_id=player_id)
 
+    async def player_command_select_source(self, player_id: str, source: str) -> None:
+        """
+        Handle SELECT SOURCE command on given player.
+
+        - player_id: player_id of the player to handle the command.
+        - source: The ID of the source that needs to be activated/selected.
+        """
+        await self.client.send_command(
+            "players/cmd/select_source", player_id=player_id, source=source
+        )
+
     async def player_command_group(self, player_id: str, target_player: str) -> None:
         """Handle GROUP command for given player.
 
