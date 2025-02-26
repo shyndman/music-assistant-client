@@ -44,7 +44,7 @@ def compact_media_item_dict(item: dict[str, Any]) -> dict[str, Any]:
 def searchresults_as_compact_dict(search_results: SearchResults) -> dict[str, Any]:
     """Return compacted search result dict."""
     dict_result: dict[str, list[dict[str, Any]]] = search_results.to_dict()
-    for media_type_key in dict_result:
+    for media_type_key in dict_result:  # noqa: PLC0206
         for item in dict_result[media_type_key]:
             if not isinstance(item, dict):
                 # guards against invalid data
