@@ -9,12 +9,15 @@ from music_assistant_models.enums import AlbumType, ImageType, MediaType
 from music_assistant_models.media_items import (
     Album,
     Artist,
+    Audiobook,
     ItemMapping,
     MediaItemImage,
     MediaItemMetadata,
     MediaItemType,
     MediaItemTypeOrItemMapping,
     Playlist,
+    Podcast,
+    PodcastEpisode,
     Radio,
     SearchResults,
     Track,
@@ -344,6 +347,95 @@ class Music:
             )
         )
 
+    # Audiobooks related endpoints/commands
+
+    async def get_library_audiobooks(
+        self,
+        favorite: bool | None = None,
+        search: str | None = None,
+        limit: int | None = None,
+        offset: int | None = None,
+        order_by: str | None = None,
+    ) -> list[Audiobook]:
+        """Get Audiobooks listing from the server."""
+        return [
+            Audiobook.from_dict(obj)
+            for obj in await self.client.send_command(
+                "music/audiobooks/library_items",
+                favorite=favorite,
+                search=search,
+                limit=limit,
+                offset=offset,
+                order_by=order_by,
+            )
+        ]
+
+    async def get_audiobook(
+        self,
+        item_id: str,
+        provider_instance_id_or_domain: str,
+    ) -> Audiobook:
+        """Get single Audiobook from the server."""
+        return Audiobook.from_dict(
+            await self.client.send_command(
+                "music/audiobooks/get_audiobook",
+                item_id=item_id,
+                provider_instance_id_or_domain=provider_instance_id_or_domain,
+            ),
+        )
+
+    # Podcasts related endpoints/commands
+
+    async def get_library_podcasts(
+        self,
+        favorite: bool | None = None,
+        search: str | None = None,
+        limit: int | None = None,
+        offset: int | None = None,
+        order_by: str | None = None,
+    ) -> list[Podcast]:
+        """Get Podcasts listing from the server."""
+        return [
+            Podcast.from_dict(obj)
+            for obj in await self.client.send_command(
+                "music/podcasts/library_items",
+                favorite=favorite,
+                search=search,
+                limit=limit,
+                offset=offset,
+                order_by=order_by,
+            )
+        ]
+
+    async def get_podcast(
+        self,
+        item_id: str,
+        provider_instance_id_or_domain: str,
+    ) -> Podcast:
+        """Get single Podcast from the server."""
+        return Podcast.from_dict(
+            await self.client.send_command(
+                "music/podcasts/get_podcast",
+                item_id=item_id,
+                provider_instance_id_or_domain=provider_instance_id_or_domain,
+            ),
+        )
+
+    async def get_podcast_episodes(
+        self,
+        item_id: str,
+        provider_instance_id_or_domain: str,
+    ) -> list[PodcastEpisode]:
+        """Get episodes for given podcast."""
+        return [
+            PodcastEpisode.from_dict(obj)
+            for obj in await self.client.send_command(
+                "music/podcasts/podcast_episodes",
+                item_id=item_id,
+                provider_instance_id_or_domain=provider_instance_id_or_domain,
+            )
+        ]
+
     #  Radio related endpoints/commands
 
     async def get_library_radios(
@@ -449,13 +541,20 @@ class Music:
 
     async def recently_played(
         self, limit: int = 10, media_types: list[MediaType] | None = None
-    ) -> list[MediaItemType | ItemMapping]:
+    ) -> list[ItemMapping]:
         """Return a list of the last played items."""
         return [
-            media_from_dict(item)
+            ItemMapping.from_dict(item)
             for item in await self.client.send_command(
                 "music/recently_played_items", limit=limit, media_types=media_types
             )
+        ]
+
+    async def in_progress_items(self, limit: int = 10) -> list[ItemMapping]:
+        """Return a list of the Audiobooks and PodcastEpisodes that are in progress."""
+        return [
+            ItemMapping.from_dict(item)
+            for item in await self.client.send_command("music/in_progress_items", limit=limit)
         ]
 
     async def get_item_by_uri(
@@ -480,6 +579,22 @@ class Music:
                 provider_instance_id_or_domain=provider_instance_id_or_domain,
             )
         )
+
+    async def get_library_item_by_prov_id(
+        self,
+        media_type: MediaType,
+        item_id: str,
+        provider_instance_id_or_domain: str,
+    ) -> MediaItemType | None:
+        """Get single library music item by id and media type."""
+        if result := await self.client.send_command(
+            "music/get_library_item",
+            media_type=media_type,
+            item_id=item_id,
+            provider_instance_id_or_domain=provider_instance_id_or_domain,
+        ):
+            return cast(MediaItemType, media_from_dict(result))
+        return None
 
     async def add_item_to_favorites(
         self,
@@ -533,6 +648,25 @@ class Music:
         if result := await self.client.send_command("music/refresh_item", media_item=media_item):
             return media_from_dict(result)
         return None
+
+    async def mark_item_played(
+        self,
+        media_item: MediaItemType,
+        fully_played: bool = True,
+    ) -> None:
+        """Mark item as played in playlog."""
+        await self.client.send_command(
+            "music/mark_played",
+            media_item=media_item,
+            fully_played=fully_played,
+        )
+
+    async def mark_item_unplayed(
+        self,
+        media_item: MediaItemType,
+    ) -> None:
+        """Mark item as unplayed in playlog."""
+        await self.client.send_command("music/mark_unplayed", media_item=media_item)
 
     # helpers
 
@@ -589,6 +723,8 @@ class Music:
                 self.get_library_tracks,
                 self.get_library_albums,
                 self.get_library_artists,
+                self.get_library_audiobooks,
+                self.get_library_podcasts,
             )
             if not media_type or media_type.value.lower() in x.__name__
         ]
@@ -633,6 +769,8 @@ class Music:
             search_results.playlists,
             search_results.artists,
             search_results.radio,
+            search_results.audiobooks,
+            search_results.podcasts,
         ):
             for _item in results:
                 # simply return the first item because search is already sorted by best match
