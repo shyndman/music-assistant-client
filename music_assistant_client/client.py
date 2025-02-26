@@ -7,7 +7,7 @@ import logging
 import urllib.parse
 import uuid
 from collections.abc import Callable, Coroutine
-from typing import TYPE_CHECKING, Any, Self, cast
+from typing import TYPE_CHECKING, Any, Self
 
 from music_assistant_models.api import (
     CommandMessage,
@@ -131,7 +131,7 @@ class MusicAssistantClient:
         """Get (proxied) URL for MediaItemImage."""
         assert self.server_info
         if image.remotely_accessible and not size:
-            return cast(str, image.path)
+            return image.path
         if image.remotely_accessible and size:
             # get url to resized image(thumb) from weserv service
             return (

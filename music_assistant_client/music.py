@@ -13,8 +13,8 @@ from music_assistant_models.media_items import (
     MediaItemImage,
     MediaItemMetadata,
     MediaItemType,
+    MediaItemTypeOrItemMapping,
     Playlist,
-    PlaylistTrack,
     Radio,
     SearchResults,
     Track,
@@ -302,10 +302,10 @@ class Music:
         item_id: str,
         provider_instance_id_or_domain: str,
         page: int = 0,
-    ) -> list[PlaylistTrack]:
+    ) -> list[Track]:
         """Get tracks for given playlist."""
         return [
-            PlaylistTrack.from_dict(obj)
+            Track.from_dict(obj)
             for obj in await self.client.send_command(
                 "music/playlists/playlist_tracks",
                 item_id=item_id,
@@ -577,7 +577,7 @@ class Music:
         artist: str | None = None,
         album: str | None = None,
         media_type: MediaType | None = None,
-    ) -> MediaItemType | None:
+    ) -> MediaItemTypeOrItemMapping | None:
         """Try to find a media item (such as a playlist) by name."""
         # pylint: disable=too-many-nested-blocks
         searchname = name.lower()
@@ -625,7 +625,7 @@ class Music:
             media_types=[media_type]
             if media_type and media_type != MediaType.UNKNOWN
             else MediaType.ALL,
-            limit=5,
+            limit=8,
         )
         for results in (
             search_results.tracks,
@@ -634,7 +634,7 @@ class Music:
             search_results.artists,
             search_results.radio,
         ):
-            for item in results:
+            for _item in results:
                 # simply return the first item because search is already sorted by best match
-                return item
+                return _item
         return None
