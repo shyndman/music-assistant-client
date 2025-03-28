@@ -593,7 +593,7 @@ class Music:
             item_id=item_id,
             provider_instance_id_or_domain=provider_instance_id_or_domain,
         ):
-            return cast(MediaItemType, media_from_dict(result))
+            return cast("MediaItemType", media_from_dict(result))
         return None
 
     async def add_item_to_favorites(
@@ -634,7 +634,7 @@ class Music:
     ) -> MediaItemType:
         """Add item (uri or mediaitem) to the library."""
         return cast(
-            MediaItemType,
+            "MediaItemType",
             await self.client.send_command(
                 "music/library/add_item", item=item, overwrite_existing=overwrite_existing
             ),
@@ -693,7 +693,7 @@ class Music:
         if metadata := getattr(item, "metadata", None):
             for img in metadata.images or []:
                 if img.type == type:
-                    return cast(MediaItemImage, img)
+                    return cast("MediaItemImage", img)
         # retry with album/track artist(s)
         artists: list[Artist | ItemMapping] | None
         if artists := getattr(item, "artists", None):

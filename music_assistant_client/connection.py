@@ -96,7 +96,7 @@ class WebsocketsConnection:
             raise InvalidMessage(f"Received non-Text message: {ws_msg.type}")
 
         try:
-            msg = cast(dict[str, Any], json_loads(ws_msg.data))
+            msg = cast("dict[str, Any]", json_loads(ws_msg.data))
         except TypeError as err:
             raise InvalidMessage(f"Received unsupported JSON: {err}") from err
         except ValueError as err:

@@ -53,7 +53,7 @@ class Config:
     async def get_provider_config_value(self, instance_id: str, key: str) -> ConfigValueType:
         """Return single configentry value for a provider."""
         return cast(
-            ConfigValueType,
+            "ConfigValueType",
             await self.client.send_command(
                 "config/providers/get_value", instance_id=instance_id, key=key
             ),
@@ -149,7 +149,7 @@ class Config:
     ) -> ConfigValueType:
         """Return single configentry value for a player."""
         return cast(
-            ConfigValueType,
+            "ConfigValueType",
             await self.client.send_command(
                 "config/players/get_value", player_id=player_id, key=key
             ),
@@ -193,7 +193,7 @@ class Config:
     async def get_core_config_value(self, domain: str, key: str) -> ConfigValueType:
         """Return single configentry value for a core controller."""
         return cast(
-            ConfigValueType,
+            "ConfigValueType",
             await self.client.send_command("config/core/get_value", domain=domain, key=key),
         )
 
