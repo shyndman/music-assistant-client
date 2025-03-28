@@ -19,6 +19,7 @@ from music_assistant_models.media_items import (
     Podcast,
     PodcastEpisode,
     Radio,
+    RecommendationFolder,
     SearchResults,
     Track,
     media_from_dict,
@@ -555,6 +556,13 @@ class Music:
         return [
             ItemMapping.from_dict(item)
             for item in await self.client.send_command("music/in_progress_items", limit=limit)
+        ]
+
+    async def recommendations(self) -> list[RecommendationFolder]:
+        """Get all recommendations."""
+        return [
+            RecommendationFolder.from_dict(item)
+            for item in await self.client.send_command("music/recommendations")
         ]
 
     async def get_item_by_uri(
