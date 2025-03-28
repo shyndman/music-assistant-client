@@ -6,6 +6,7 @@ classifiers = [
   "Environment :: Console",
   "Programming Language :: Python :: 3.11",
   "Programming Language :: Python :: 3.12",
+  "Programming Language :: Python :: 3.13",
 ]
 dependencies = ["aiohttp>=3.8.6", "music_assistant_models==1.1.43", "orjson>=3.9"]
 description = "Music Assistant Client"
