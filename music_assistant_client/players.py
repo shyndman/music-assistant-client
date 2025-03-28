@@ -4,7 +4,10 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
-from music_assistant_models.enums import EventType
+from music_assistant_models.enums import EventType, MediaType
+from music_assistant_models.errors import PlayerCommandFailed, PlayerUnavailableError
+from music_assistant_models.helpers import create_sort_name
+from music_assistant_models.media_items import Track
 from music_assistant_models.player import Player
 
 if TYPE_CHECKING:
@@ -191,6 +194,55 @@ class Players:
     async def player_command_group_volume_down(self, player_id: str) -> None:
         """Send VOLUME_DOWN command to given playergroup."""
         await self.client.send_command("players/cmd/group_volume_down", player_id=player_id)
+
+    async def add_currently_playing_to_favorites(self, player_id: str) -> None:
+        """
+        Add the currently playing item/track on given player to the favorites.
+
+        This tries to resolve the currently playing media to an actual media item
+        and add that to the favorites in the library.
+
+        Will raise an error if the player is not currently playing anything
+        or if the currently playing media can not be resolved to a media item.
+        """
+        if not (player := self._players.get(player_id)):
+            raise PlayerUnavailableError(f"Player {player_id} not found")
+        if not player.active_source:
+            raise PlayerCommandFailed("Player has no active source")
+        if mass_queue := self.client.player_queues.get(player.active_source):
+            if not (current_item := mass_queue.current_item) or not current_item.media_item:
+                raise PlayerCommandFailed("No current item to add to favorites")
+            # if we're playing a radio station, try to resolve the currently playing track
+            if (
+                current_item.media_item.media_type == MediaType.RADIO
+                and (streamdetails := mass_queue.current_item.streamdetails)
+                and (stream_title := streamdetails.stream_title)
+                and " - " in stream_title
+            ):
+                search_result = await self.client.music.search(
+                    search_query=stream_title,
+                    media_types=[MediaType.TRACK],
+                )
+                for search_track in search_result.tracks:
+                    if not isinstance(search_track, Track):
+                        continue
+                    # check if the artist and title match
+                    # for now we only allow a strict match on the artist and title
+                    artist, title = stream_title.split(" - ", 1)
+                    if create_sort_name(artist) != create_sort_name(search_track.artist_str):
+                        continue
+                    if create_sort_name(title) != create_sort_name(search_track.name):
+                        continue
+                    # we found a match, add it to the favorites
+                    await self.client.music.add_item_to_favorites(search_track)
+                    return
+            # any other media item, just add it to the favorites
+            await self.client.music.add_item_to_favorites(current_item.media_item)
+            return
+        # handle other source active using the current_media
+        if not (current_media := player.current_media) or not current_media.uri:
+            raise PlayerCommandFailed("No current item to add to favorites")
+        await self.client.music.add_item_to_favorites(current_media.uri)
 
     # Other endpoints/commands
 
