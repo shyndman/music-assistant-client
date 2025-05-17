@@ -52,6 +52,7 @@ class MusicAssistantClient:
         self.server_url = server_url
         self.connection = WebsocketsConnection(server_url, aiohttp_session)
         self.logger = logging.getLogger(__package__)
+        self.logger.debug("Initializing MusicAssistantClient for server: %s", server_url)
         self._result_futures: dict[str | int, asyncio.Future[Any]] = {}
         self._subscribers: list[EventSubscriptionType] = []
         self._stop_called: bool = False
@@ -189,12 +190,15 @@ class MusicAssistantClient:
 
     async def connect(self) -> None:
         """Connect to the remote Music Assistant Server."""
+        self.logger.debug("Attempting to connect to server: %s", self.server_url)
         self._loop = asyncio.get_running_loop()
         if self.connection.connected:
             # already connected
             return
         # NOTE: connect will raise when connecting failed
+        self.logger.debug("Calling self.connection.connect()")
         result = await self.connection.connect()
+        self.logger.debug("self.connection.connect() returned")
         info = ServerInfoMessage.from_dict(result)
 
         # basic check for server schema version compatibility
@@ -225,6 +229,7 @@ class MusicAssistantClient:
         **kwargs: Any,
     ) -> Any:
         """Send a command and get a response."""
+        self.logger.debug("Sending command: %s with args: %s", command, kwargs)
         if not self.connection.connected or not self._loop:
             msg = "Not connected"
             raise InvalidState(msg)
@@ -260,6 +265,7 @@ class MusicAssistantClient:
         **kwargs: Any,
     ) -> None:
         """Send a command without waiting for the response."""
+        self.logger.debug("Sending command (no wait): %s with args: %s", command, kwargs)
         if not self.server_info:
             msg = "Not connected"
             raise InvalidState(msg)
@@ -279,45 +285,62 @@ class MusicAssistantClient:
 
     async def start_listening(self, init_ready: asyncio.Event | None = None) -> None:
         """Connect (if needed) and start listening to incoming messages from the server."""
+        self.logger.debug("Starting listening task")
+        self.logger.debug("Calling self.connect()")
         await self.connect()
+        self.logger.debug("self.connect() returned")
 
         # fetch initial state
         # we do this in a separate task to not block reading messages
         async def fetch_initial_state() -> None:
+            self.logger.debug("Fetching initial state")
+            self.logger.debug("Fetching providers")
             self._providers = {
                 x["instance_id"]: ProviderInstance.from_dict(x)
                 for x in await self.send_command("providers")
             }
+            self.logger.debug("Fetched %s providers", len(self._providers))
+            self.logger.debug("Fetching provider manifests")
             self._provider_manifests = {
                 x["domain"]: ProviderManifest.from_dict(x)
                 for x in await self.send_command("providers/manifests")
             }
+            self.logger.debug("Fetched %s provider manifests", len(self._provider_manifests))
+            self.logger.debug("Fetching player queues state")
             await self._player_queues.fetch_state()
+            self.logger.debug("Fetched player queues state")
+            self.logger.debug("Fetching players state")
             await self._players.fetch_state()
+            self.logger.debug("Fetched players state")
 
             if init_ready is not None:
+                self.logger.debug("Setting init_ready event")
                 init_ready.set()
 
         fetch_state_task = asyncio.create_task(fetch_initial_state())
 
         try:
+            self.logger.debug("Starting message receiving loop")
             # keep reading incoming messages
             while not self._stop_called:
                 msg = await self.connection.receive_message()
                 self._handle_incoming_message(msg)
         except ConnectionClosed:
-            pass
+            self.logger.debug("Connection closed during listening")
         finally:
             fetch_state_task.cancel()
             await self.disconnect()
 
     async def disconnect(self) -> None:
         """Disconnect the client and cleanup."""
+        self.logger.debug("Attempting to disconnect from server")
         self._stop_called = True
         # cancel all command-tasks awaiting a result
         for future in self._result_futures.values():
             future.cancel()
+        self.logger.debug("Calling self.connection.disconnect()")
         await self.connection.disconnect()
+        self.logger.debug("self.connection.disconnect() returned")
 
     def _handle_incoming_message(self, raw: dict[str, Any]) -> None:
         """
@@ -325,18 +348,28 @@ class MusicAssistantClient:
 
         Run all async tasks in a wrapper to log appropriately.
         """
+        self.logger.debug("Handling incoming message: %s", raw)
         msg = parse_message(raw)
         # handle result message
         if isinstance(msg, ResultMessageBase):
+            self.logger.debug("Handling ResultMessageBase with message_id: %s", msg.message_id)
             future = self._result_futures.get(msg.message_id)
 
             if future is None:
                 # no listener for this result
                 return
             if isinstance(msg, SuccessResultMessage):
+                self.logger.debug(
+                    "Received SuccessResultMessage for message_id: %s", msg.message_id
+                )
                 future.set_result(msg.result)
                 return
             if isinstance(msg, ErrorResultMessage):
+                self.logger.debug(
+                    "Received ErrorResultMessage for message_id: %s with error: %s",
+                    msg.message_id,
+                    msg.error_code,
+                )
                 exc = ERROR_MAP[msg.error_code]
                 future.set_exception(exc(msg.details))
                 return
@@ -356,6 +389,7 @@ class MusicAssistantClient:
 
     def _handle_event(self, event: MassEvent) -> None:
         """Forward event to subscribers."""
+        self.logger.debug("Handling event: %s", event.event)
         if self._stop_called:
             return
 
@@ -365,10 +399,16 @@ class MusicAssistantClient:
             self._providers = {x["instance_id"]: ProviderInstance.from_dict(x) for x in event.data}
 
         for cb_func, event_filter, id_filter in self._subscribers:
+            self.logger.debug(
+                "Checking subscriber: %s for event: %s", cb_func.__name__, event.event
+            )
             if not (event_filter is None or event.event in event_filter):
+                self.logger.debug("Subscriber %s event filter mismatch", cb_func.__name__)
                 continue
             if not (id_filter is None or event.object_id in id_filter):
+                self.logger.debug("Subscriber %s id filter mismatch", cb_func.__name__)
                 continue
+            self.logger.debug("Calling subscriber: %s for event: %s", cb_func.__name__, event.event)
             if asyncio.iscoroutinefunction(cb_func):
                 asyncio.run_coroutine_threadsafe(cb_func(event), self._loop)
             else:
